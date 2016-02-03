@@ -6,6 +6,11 @@
 
 #define PNG_BIT_DEPTH 8
 
+void err(const char *msg) {
+    fprintf(stderr, msg);
+    exit(1);
+}
+
 int main(int argc, char *argv[]) {
     /* resources:
      * http://stackoverflow.com/q/8249669/1223693
@@ -36,50 +41,29 @@ int main(int argc, char *argv[]) {
 
     // the output file we're writing the PNG to
     FILE *fp = fopen("out.png", "wb");
-    if (!fp) {
-        fprintf(stderr, "failed to open out.png\n");
-        return 1;
-    }
+    if (!fp) err("failed to open out.png\n");
 
     // libpng stuff
     png_structp imgPtr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL,
             NULL, NULL);
-    if (!imgPtr) {
-        fprintf(stderr, "failed to create PNG write struct\n");
-        return 1;
-    }
+    if (!imgPtr) err("failed to create PNG write struct\n");
 
     png_infop infoPtr = png_create_info_struct(imgPtr);
-    if (!infoPtr) {
-        fprintf(stderr, "failed to create PNG info struct\n");
-        return 1;
-    }
+    if (!infoPtr) err("failed to create PNG info struct\n");
 
-    if (setjmp(png_jmpbuf(imgPtr))) {
-        fprintf(stderr, "error initializing PNG IO\n");
-        return 1;
-    }
+    if (setjmp(png_jmpbuf(imgPtr))) err("error initializing PNG IO\n");
     png_init_io(imgPtr, fp);
 
-    if (setjmp(png_jmpbuf(imgPtr))) {
-        fprintf(stderr, "error writing PNG header\n");
-        return 1;
-    }
+    if (setjmp(png_jmpbuf(imgPtr))) err("error writing PNG header\n");
     png_set_IHDR(imgPtr, infoPtr, w, h, PNG_BIT_DEPTH, PNG_COLOR_TYPE_RGB,
             PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT,
             PNG_FILTER_TYPE_DEFAULT);
     png_write_info(imgPtr, infoPtr);
 
-    if (setjmp(png_jmpbuf(imgPtr))) {
-        fprintf(stderr, "error writing PNG data\n");
-        return 1;
-    }
+    if (setjmp(png_jmpbuf(imgPtr))) err("error writing PNG data\n");
     png_write_image(imgPtr, png);
 
-    if (setjmp(png_jmpbuf(imgPtr))) {
-        fprintf(stderr, "error finishing PNG write\n");
-        return 1;
-    }
+    if (setjmp(png_jmpbuf(imgPtr))) err("error finishing PNG write\n");
     png_write_end(imgPtr, NULL);
 
     fclose(fp);
